@@ -24,7 +24,7 @@ public class DefineSymbolSetup
     private const string DEFINE_SYMBOL = "ENABLE_LIGHTMAP_LERP";
 
 #if !ENABLE_LIGHTMAP_LERP
-    [MenuItem("Runtime Lightmap Controller Settings/Enable Lightmap Lerp")]
+    [MenuItem("Tools/Enable Lightmap Lerp")]
     public static void EnableLightmapLerp()
     {
         string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
@@ -37,7 +37,7 @@ public class DefineSymbolSetup
         }
     }
 #elif ENABLE_LIGHTMAP_LERP
-    [MenuItem("Runtime Lightmap Controller Settings/Disable Lightmap Lerp")]
+    [MenuItem("Tools/Disable Lightmap Lerp")]
     public static void DisableLightmapLerp()
     {
         string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
