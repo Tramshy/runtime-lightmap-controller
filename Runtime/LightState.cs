@@ -4,7 +4,7 @@ using UnityEngine.Rendering;
 
 namespace RuntimeLightmapController
 {
-    [CreateAssetMenu(fileName = "New Light State", menuName = "Runtime Lightmap Switcher/Light State", order = 1)]
+    [CreateAssetMenu(fileName = "New Light State", menuName = "Runtime Lightmap Controller/Light State", order = 1)]
     public class LightState : ScriptableObject
     {
         [SerializeField] private Texture2D[] _lightmapLight, _lightmapDir;
