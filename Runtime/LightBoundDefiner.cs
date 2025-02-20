@@ -66,6 +66,10 @@ namespace RuntimeLightmapController
                 return;
 
             _lightmapBlender = Resources.Load<ComputeShader>(@"LightmapSmoothing");
+
+            if (_lightProbeIndexes.Length == 0)
+                return;
+
             _shBlender = Resources.Load<ComputeShader>(@"SHSmoothing");
 
             int shCoeffCount = 9;
@@ -98,11 +102,6 @@ namespace RuntimeLightmapController
             _lResult = _switcher.LightResult;
             _dResult = _switcher.DirResult;
 
-            _firstSH = _switcher.SH1;
-            _secondSH = _switcher.SH2;
-            _shResult = _switcher.SHResult;
-            _shLerpFactor = _switcher.SHLerpFactor;
-
             _smoothChangeTextures = new Texture2D[_switcher.LightmapPerState * 2];
             _midBlendedLightmaps = new Texture2D[_switcher.LightmapPerState * 2];
 
@@ -116,6 +115,14 @@ namespace RuntimeLightmapController
                 _midBlendedLightmaps[i] = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
                 _midBlendedLightmaps[i + _switcher.LightmapPerState] = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
             }
+
+            if (_lightProbeIndexes.Length == 0)
+                return;
+
+            _firstSH = _switcher.SH1;
+            _secondSH = _switcher.SH2;
+            _shResult = _switcher.SHResult;
+            _shLerpFactor = _switcher.SHLerpFactor;
 
             _probes = new SphericalHarmonicsL2[_lightProbeIndexes.Length];
 
@@ -189,7 +196,9 @@ namespace RuntimeLightmapController
             }
 
             CurrentLightState = lightStateToSwitch;
-            BlendSH(_probes, lightStateToSwitch, timeToBlend, framesBetweenChecks);
+
+            if (_lightProbeIndexes.Length != 0)
+                BlendSH(_probes, lightStateToSwitch, timeToBlend, framesBetweenChecks);
         }
 
         public void SwitchLightStateSmoothToNext(int framesBetweenTextureCheck, float timeToBlend)
@@ -394,6 +403,9 @@ namespace RuntimeLightmapController
         private void OnDisable()
         {
             _cancelSource?.Cancel();
+
+            if (_lightProbeIndexes.Length == 0)
+                return;
 
             _sh1.Release();
             _sh2.Release();
