@@ -228,12 +228,9 @@ namespace RuntimeLightmapController
             {
                 if (_staticRenderers[i].StartIndex == -1)
                 {
-                    if (_staticRenderers[i].StartIndex == -1)
-                    {
-                        if (_shouldWarnAboutStaticNonuseOfLightmap)
-                            Debug.LogWarning(_staticRenderers[i].ThisRenderer.gameObject.name + " is static, but does not make use of baked light textures.\n" +
-                                             "If this is intended, you can disable this warning by setting the Should Warn About Static Nonuse Of Lightmap bool to false");
-                    }
+                    if (_shouldWarnAboutStaticNonuseOfLightmap)
+                        Debug.LogWarning(_staticRenderers[i].ThisRenderer.gameObject.name + " is static, but does not make use of baked light textures.\n" +
+                                            "If this is intended, you can disable this warning by setting the Should Warn About Static Nonuse Of Lightmap bool to false");
 
                     continue;
                 }
