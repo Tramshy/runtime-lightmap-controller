@@ -68,9 +68,6 @@ namespace RuntimeLightmapController
             _lightmapBlender = Resources.Load<ComputeShader>(@"LightmapSmoothing");
             _shBlender = Resources.Load<ComputeShader>(@"SHSmoothing");
 
-            _lRenderOut = new RenderTexture(LightSwitcher.Instance.LightmapSize.x, LightSwitcher.Instance.LightmapSize.y, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) { enableRandomWrite = true };
-            _dRenderOut = new RenderTexture(LightSwitcher.Instance.LightmapSize.x, LightSwitcher.Instance.LightmapSize.y, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) { enableRandomWrite = true };
-
             int shCoeffCount = 9;
             int totalSize = _lightProbeIndexes.Length * shCoeffCount;
             int stride = sizeof(float) * 3;
@@ -88,6 +85,9 @@ namespace RuntimeLightmapController
 #if ENABLE_LIGHTMAP_LERP
             if (!_willUseSmoothLightTransition)
                 return;
+
+            _lRenderOut = new RenderTexture(_switcher.LightmapSize.x, _switcher.LightmapSize.y, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) { enableRandomWrite = true };
+            _dRenderOut = new RenderTexture(_switcher.LightmapSize.x, _switcher.LightmapSize.y, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) { enableRandomWrite = true };
 
             _lLightmap1 = _switcher.LightmapLight1;
             _lLightmap2 = _switcher.LightmapLight2;
