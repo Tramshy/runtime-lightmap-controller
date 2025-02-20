@@ -1,0 +1,26 @@
+#pragma kernel CSMain
+
+// Preprocessors
+// SphericalHarmonicalL2 Coefficients
+#define SH_COEFF_COUNT 9
+
+// In
+StructuredBuffer<float3> _SH1;
+StructuredBuffer<float3> _SH2;
+    
+// Params
+float _LerpFactor;
+
+// Out    
+RWStructuredBuffer<float3> _Result;
+
+[numthreads(64,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int index = id.x;
+    
+    for (int i = 0; i < SH_COEFF_COUNT; i++)
+    {
+        _Result[index * SH_COEFF_COUNT + i] = lerp(_SH1[index * SH_COEFF_COUNT + i], _SH2[index * SH_COEFF_COUNT + i], _LerpFactor);
+    }
+}

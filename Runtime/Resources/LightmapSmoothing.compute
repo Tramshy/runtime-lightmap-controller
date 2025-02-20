@@ -1,0 +1,33 @@
+#pragma kernel CSMain
+
+// In
+Texture2D<float4> _LLightmap1;
+Texture2D<float4> _LLightmap2;
+Texture2D<float4> _DLightmap1;
+Texture2D<float4> _DLightmap2;
+
+// Param
+float2 _LightmapSize;
+float _LerpFactor;
+
+// State
+SamplerState LinearClamp;
+
+// Out
+RWTexture2D<float4> _ResultLight;
+RWTexture2D<float4> _ResultDir;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{   
+    float2 uv = (float2) id.xy / _LightmapSize;
+    
+    float4 color1 = _LLightmap1.SampleLevel(LinearClamp, uv, 0);
+    float4 color2 = _LLightmap2.SampleLevel(LinearClamp, uv, 0);
+    
+    float4 color3 = _DLightmap1.SampleLevel(LinearClamp, uv, 0);
+    float4 color4 = _DLightmap2.SampleLevel(LinearClamp, uv, 0);
+    
+    _ResultLight[id.xy] = lerp(color1, color2, _LerpFactor);
+    _ResultDir[id.xy] = lerp(color3, color4, _LerpFactor);
+}
