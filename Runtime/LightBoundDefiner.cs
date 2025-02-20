@@ -16,7 +16,7 @@ namespace RuntimeLightmapController
 
         [SerializeField] private int[] _lightProbeIndexes;
 
-        [SerializeField] private bool _shouldWarnAboutStaticNonuseOfLightmap = true, _shouldDisplayWireFrame = true;
+        [SerializeField] private bool _shouldDisplayWireFrame = true;
 #if ENABLE_LIGHTMAP_LERP
         [Tooltip("Turn this off to save a little memory and CPU usage that would otherwise be used on start to prepare for smooth lightmap changes.")]
         [SerializeField] private bool _willUseSmoothLightTransition = true;
@@ -149,15 +149,6 @@ namespace RuntimeLightmapController
 
             for (int i = 0; i < _staticRenderers.Length; i++)
             {
-                if (_staticRenderers[i].StartIndex == -1)
-                {
-                    if (_shouldWarnAboutStaticNonuseOfLightmap)
-                        Debug.LogWarning(_staticRenderers[i].ThisRenderer.gameObject.name + " is static, but does not make use of baked light textures.\n" +
-                                         "If this is intended, you can disable this warning by setting the Should Warn About Static Nonuse Of Lightmap bool to false");
-
-                    continue;
-                }
-
                 _staticRenderers[i].ThisRenderer.lightmapIndex = (lightStateToSwitch * _switcher.LightmapPerState) + _staticRenderers[i].StartIndex;
             }
 
