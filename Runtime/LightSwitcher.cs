@@ -21,19 +21,27 @@ namespace RuntimeLightmapController
         public int LightStates { get => _data.Length - 1; }
         public int LightmapPerState { get => _data[0].LLightmaps.Length; }
 
+#if ENABLE_LIGHTMAP_LERP
         private List<int> _temporaryLightmapToRemove = new List<int>();
 
-#if ENABLE_LIGHTMAP_LERP
+#if ENABLE_SHADOW_MASK
+        public Texture2D ShadowMaskReplacement { get; private set; }
+#endif
+
         #region Shader properties
 
         public int LightmapLight1 { get; } = Shader.PropertyToID("_LLightmap1");
         public int LightmapLight2 { get; } = Shader.PropertyToID("_LLightmap2");
         public int LightmapDir1 { get; } = Shader.PropertyToID("_DLightmap1");
         public int LightmapDir2 { get; } = Shader.PropertyToID("_DLightmap2");
+        public int ShadowMask1 { get; } = Shader.PropertyToID("_ShadowMask1");
+        public int ShadowMask2 { get; } = Shader.PropertyToID("_ShadowMask2");
         public int LightmapFloat2Size { get; } = Shader.PropertyToID("_LightmapSize");
         public int MapLerpFactor { get; } = Shader.PropertyToID("_LerpFactor");
         public int LightResult { get; } = Shader.PropertyToID("_ResultLight");
         public int DirResult { get; } = Shader.PropertyToID("_ResultDir");
+        public int ShadowMaskResult { get; } = Shader.PropertyToID("_ResultShadowMask");
+        public int UseShadowMask { get; } = Shader.PropertyToID("_UseShadowMask");
 
         public int SH1 { get; } = Shader.PropertyToID("_SH1");
         public int SH2 { get; } = Shader.PropertyToID("_SH2");
@@ -60,6 +68,19 @@ namespace RuntimeLightmapController
             SetupLightmaps();
 
             _currentLightmaps = LightmapSettings.lightmaps;
+
+#if ENABLE_SHADOW_MASK
+            ShadowMaskReplacement = new Texture2D(LightmapSize.x, LightmapSize.y, TextureFormat.RGBAHalf, false);
+            var pixels = new Color32[LightmapSize.x * LightmapSize.y];
+
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = Color.black;
+            }
+
+            ShadowMaskReplacement.SetPixels32(pixels);
+            ShadowMaskReplacement.Apply();
+#endif
         }
 
         public void SetupLightmaps()
@@ -78,6 +99,11 @@ namespace RuntimeLightmapController
                         lightmapColor = _data[i].LLightmaps[j],
                         lightmapDir = _data[i].DLightmaps[j]
                     };
+
+#if ENABLE_SHADOW_MASK
+                    if (_data[i].ShadowMasks.Length > 0)
+                        lightData.shadowMask = _data[i].ShadowMasks[j];
+#endif
 
                     lightmaps.Add(lightData);
                 }
@@ -179,7 +205,6 @@ namespace RuntimeLightmapController
             _temporaryLightmapToRemove.Clear();
             LightmapSettings.lightmaps = lightmaps.ToArray();
         }
-#endif
 
         public void SetLightmaps(int[] indexes, LightmapData[] data)
         {
@@ -193,6 +218,7 @@ namespace RuntimeLightmapController
 
             LightmapSettings.lightmaps = _currentLightmaps;
         }
+#endif
 
 #if UNITY_EDITOR
         public enum IssueReason { DifferingLLightmaps, DifferingDLightmaps, NoIssue }

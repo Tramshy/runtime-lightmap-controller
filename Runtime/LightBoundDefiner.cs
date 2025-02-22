@@ -31,6 +31,8 @@ namespace RuntimeLightmapController
 
         private RenderTexture _lRenderOut, _dRenderOut;
         private Texture2D[] _smoothChangeTextures, _midBlendedLightmaps;
+
+        private RenderTexture _sRenderOut;
 #endif
 
         private LightSwitcher _switcher;
@@ -41,7 +43,7 @@ namespace RuntimeLightmapController
         private int[] _lightSmoothArrayIndexes;
 
         // Shader Properties
-        private int _lLightmap1, _lLightmap2, _dLightmap1, _dLightmap2, _lightmapSize, _lerpFactor, _lResult, _dResult;
+        private int _lLightmap1, _lLightmap2, _dLightmap1, _dLightmap2, _shadowMask1, _shadowMask2, _lightmapSize, _lerpFactor, _lResult, _dResult, _sResult, _shouldUseShadowMask;
         private int _firstSH, _secondSH, _shResult, _shLerpFactor;
 #endif
 
@@ -59,9 +61,9 @@ namespace RuntimeLightmapController
             }
         }
 
+#if ENABLE_LIGHTMAP_LERP
         private void Awake()
         {
-#if ENABLE_LIGHTMAP_LERP
             if (!_willUseSmoothLightTransition)
                 return;
 
@@ -79,8 +81,8 @@ namespace RuntimeLightmapController
             _sh1 = new ComputeBuffer(totalSize, stride);
             _sh2 = new ComputeBuffer(totalSize, stride);
             _outSH = new ComputeBuffer(totalSize, stride);
-#endif
         }
+#endif
 
         private void Start()
         {
@@ -90,30 +92,46 @@ namespace RuntimeLightmapController
             if (!_willUseSmoothLightTransition)
                 return;
 
-            _lRenderOut = new RenderTexture(_switcher.LightmapSize.x, _switcher.LightmapSize.y, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) { enableRandomWrite = true };
-            _dRenderOut = new RenderTexture(_switcher.LightmapSize.x, _switcher.LightmapSize.y, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) { enableRandomWrite = true };
-
             _lLightmap1 = _switcher.LightmapLight1;
             _lLightmap2 = _switcher.LightmapLight2;
             _dLightmap1 = _switcher.LightmapDir1;
             _dLightmap2 = _switcher.LightmapDir2;
+            _shadowMask1 = _switcher.ShadowMask1;
+            _shadowMask2 = _switcher.ShadowMask2;
             _lightmapSize = _switcher.LightmapFloat2Size;
             _lerpFactor = _switcher.MapLerpFactor;
             _lResult = _switcher.LightResult;
             _dResult = _switcher.DirResult;
+            _sResult = _switcher.ShadowMaskResult;
+            _shouldUseShadowMask = _switcher.UseShadowMask;
 
+#if ENABLE_SHADOW_MASK
+            _smoothChangeTextures = new Texture2D[_switcher.LightmapPerState * 3];
+            _midBlendedLightmaps = new Texture2D[_switcher.LightmapPerState * 3];
+#elif !ENABLE_SHADOW_MASK
             _smoothChangeTextures = new Texture2D[_switcher.LightmapPerState * 2];
             _midBlendedLightmaps = new Texture2D[_switcher.LightmapPerState * 2];
+#endif
 
             int width = _switcher.LightmapSize.x, height = _switcher.LightmapSize.y;
+
+            _lRenderOut = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) { enableRandomWrite = true };
+            _dRenderOut = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) { enableRandomWrite = true };
+            _sRenderOut = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) { enableRandomWrite = true };
 
             for (int i = 0; i < _switcher.LightmapPerState; i++)
             {
                 _smoothChangeTextures[i] = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
                 _smoothChangeTextures[i + _switcher.LightmapPerState] = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
+#if ENABLE_SHADOW_MASK
+                _smoothChangeTextures[i + _switcher.LightmapPerState * 2] = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
+#endif
 
                 _midBlendedLightmaps[i] = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
                 _midBlendedLightmaps[i + _switcher.LightmapPerState] = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
+#if ENABLE_SHADOW_MASK
+                _midBlendedLightmaps[i + _switcher.LightmapPerState * 2] = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
+#endif
             }
 
             if (_lightProbeIndexes.Length == 0)
@@ -128,7 +146,7 @@ namespace RuntimeLightmapController
 
             SetCurrentProbes();
 #endif
-        }
+            }
 
 #if ENABLE_LIGHTMAP_LERP
         private void SetCurrentProbes()
@@ -145,20 +163,19 @@ namespace RuntimeLightmapController
             if (lightStateToSwitch > _switcher.LightStates)
                 throw new Exception("Requested light state is out of bounds");
 
+#if ENABLE_LIGHTMAP_LERP
+            CancelSmoothLightTransition();
+#endif
+
             CurrentLightState = lightStateToSwitch;
 
             for (int i = 0; i < _staticRenderers.Length; i++)
             {
                 if (_staticRenderers[i].StartIndex == -1)
                 {
-                    if (_staticRenderers[i].StartIndex == -1)
-                    {
-                        if (_shouldWarnAboutStaticNonuseOfLightmap)
-                            Debug.LogWarning(_staticRenderers[i].ThisRenderer.gameObject.name + " is static, but does not make use of baked light textures.\n" +
-                                             "If this is intended, you can disable this warning by setting the Should Warn About Static Nonuse Of Lightmap bool to false");
-
-                        continue;
-                    }
+                    if (_shouldWarnAboutStaticNonuseOfLightmap)
+                        Debug.LogWarning(_staticRenderers[i].ThisRenderer.gameObject.name + " is static, but does not make use of baked light textures.\n" +
+                                            "If this is intended, you can disable this warning by setting the Should Warn About Static Nonuse Of Lightmap bool to false");
 
                     continue;
                 }
@@ -181,23 +198,39 @@ namespace RuntimeLightmapController
             if (_lightSmoothArrayIndexes == null)
             {
                 _lightSmoothArrayIndexes = _switcher.AddNewTemporaryLightmapSlots(CurrentLightState);
-                BlendSmooth(_switcher.States[CurrentLightState].LLightmaps, _switcher.States[CurrentLightState].DLightmaps, lightStateToSwitch, framesBetweenChecks, timeToBlend, _lightSmoothArrayIndexes);
+#if ENABLE_SHADOW_MASK
+                var masks = _switcher.States[CurrentLightState].ShadowMasks.Length > 0 ? _switcher.States[CurrentLightState].ShadowMasks : null;
+#elif !ENABLE_SHADOW_MASK
+                Texture2D[] masks = null;
+#endif
+                BlendSmooth(_switcher.States[CurrentLightState].LLightmaps, _switcher.States[CurrentLightState].DLightmaps, masks, lightStateToSwitch, framesBetweenChecks, timeToBlend, _lightSmoothArrayIndexes);
             }
             else
             {
                 var t1 = new Texture2D[_switcher.LightmapPerState];
                 var t2 = new Texture2D[_switcher.LightmapPerState];
+#if ENABLE_SHADOW_MASK
+                var t3 = _switcher.States[CurrentLightState].ShadowMasks.Length > 0 ? new Texture2D[_switcher.LightmapPerState] : null;
+#elif !ENABLE_SHADOW_MASK
+                Texture2D[] t3 = null;
+#endif
 
                 for (int i = 0; i < _switcher.LightmapPerState; i++)
                 {
                     Graphics.CopyTexture(LightmapSettings.lightmaps[_lightSmoothArrayIndexes[i]].lightmapColor, _midBlendedLightmaps[i]);
                     Graphics.CopyTexture(LightmapSettings.lightmaps[_lightSmoothArrayIndexes[i]].lightmapDir, _midBlendedLightmaps[i + _switcher.LightmapPerState]);
 
+                    if (t3 != null)
+                    {
+                        Graphics.CopyTexture(LightmapSettings.lightmaps[_lightSmoothArrayIndexes[i]].shadowMask, _midBlendedLightmaps[i + _switcher.LightmapPerState * 2]);
+                        t3[i] = _midBlendedLightmaps[i + _switcher.LightmapPerState * 2];
+                    }
+
                     t1[i] = _midBlendedLightmaps[i];
                     t2[i] = _midBlendedLightmaps[i + _switcher.LightmapPerState];
                 }
 
-                BlendSmooth(t1, t2, lightStateToSwitch, framesBetweenChecks, timeToBlend, _lightSmoothArrayIndexes);
+                BlendSmooth(t1, t2, t3, lightStateToSwitch, framesBetweenChecks, timeToBlend, _lightSmoothArrayIndexes);
             }
 
             CurrentLightState = lightStateToSwitch;
@@ -213,7 +246,7 @@ namespace RuntimeLightmapController
             SwitchLightStateSmooth(nextLightState, framesBetweenTextureCheck, timeToBlend);
         }
 
-        private async void BlendSmooth(Texture2D[] fromL, Texture2D[] fromD, int to, int framesBetweenTextureCheck, float timeToBlend, int[] lightmapsLerpSlots)
+        private async void BlendSmooth(Texture2D[] fromL, Texture2D[] fromD, Texture2D[] fromS, int to, int framesBetweenTextureCheck, float timeToBlend, int[] lightmapsLerpSlots)
         {
             _stopSource.Cancel();
             await Task.Yield();
@@ -240,7 +273,50 @@ namespace RuntimeLightmapController
 
             var lightmaps = LightmapSettings.lightmaps;
 
+#if ENABLE_SHADOW_MASK
+            int amountOfTextureToProcess = 3;
+#elif !ENABLE_SHADOW_MASK
+            int amountOfTextureToProcess = 2;
+#endif
+            int kernelIndex = _lightmapBlender.FindKernel("CSMain");
+
             _lightmapBlender.SetFloats(_lightmapSize, width, height);
+
+#if ENABLE_SHADOW_MASK
+            if (fromS == null)
+                _lightmapBlender.SetTexture(kernelIndex, _shadowMask1, _switcher.ShadowMaskReplacement);
+
+            if (_switcher.States[to].ShadowMasks.Length == 0)
+                _lightmapBlender.SetTexture(kernelIndex, _shadowMask2, _switcher.ShadowMaskReplacement);
+
+            if (fromS == null)
+                Debug.Log("No shadow mask on from yo");
+
+            if (_switcher.States[to].ShadowMasks.Length == 0)
+                Debug.Log("No shadow mask on to yo");
+
+            if (fromS == null && _switcher.States[to].ShadowMasks.Length == 0)
+            {
+                Debug.Log("No shadow masks yo");
+                _lightmapBlender.SetInt(_shouldUseShadowMask, 0);
+                _lightmapBlender.SetTexture(kernelIndex, _sResult, _sRenderOut);
+
+                amountOfTextureToProcess = 2;
+            }
+            else
+            {
+                if (fromS != null && _switcher.States[to].ShadowMasks.Length > 0)
+                    Debug.Log("Both got shadow masks yo");
+
+                _lightmapBlender.SetInt(_shouldUseShadowMask, 1);
+            }
+
+#elif !ENABLE_SHADOW_MASK
+            _lightmapBlender.SetTexture(kernelIndex, _shadowMask1, _sRenderOut);
+            _lightmapBlender.SetTexture(kernelIndex, _shadowMask2, _sRenderOut);
+            _lightmapBlender.SetInt(_shouldUseShadowMask, 0);
+            _lightmapBlender.SetTexture(kernelIndex, _sResult, _sRenderOut);
+#endif
 
             float t = 0;
 
@@ -250,6 +326,7 @@ namespace RuntimeLightmapController
                 {
                     _lRenderOut.Release();
                     _dRenderOut.Release();
+                    _sRenderOut?.Release();
 
                     return;
                 }
@@ -260,6 +337,7 @@ namespace RuntimeLightmapController
                     {
                         _lRenderOut.Release();
                         _dRenderOut.Release();
+                        _sRenderOut?.Release();
 
                         return;
                     }
@@ -284,6 +362,7 @@ namespace RuntimeLightmapController
                     {
                         _lRenderOut.Release();
                         _dRenderOut.Release();
+                        _sRenderOut?.Release();
 
                         return;
                     }
@@ -291,18 +370,36 @@ namespace RuntimeLightmapController
                     if (_cancelSource.IsCancellationRequested)
                         break;
 
-                    _lightmapBlender.SetTexture(0, _lLightmap1, fromL[i]);
-                    _lightmapBlender.SetTexture(0, _lLightmap2, _switcher.States[to].LLightmaps[i]);
-                    _lightmapBlender.SetTexture(0, _dLightmap1, fromD[i]);
-                    _lightmapBlender.SetTexture(0, _dLightmap2, _switcher.States[to].DLightmaps[i]);
+                    _lightmapBlender.SetTexture(kernelIndex, _lLightmap1, fromL[i]);
+                    _lightmapBlender.SetTexture(kernelIndex, _lLightmap2, _switcher.States[to].LLightmaps[i]);
+                    _lightmapBlender.SetTexture(kernelIndex, _dLightmap1, fromD[i]);
+                    _lightmapBlender.SetTexture(kernelIndex, _dLightmap2, _switcher.States[to].DLightmaps[i]);
 
-                    _lightmapBlender.SetTexture(0, _lResult, _lRenderOut);
-                    _lightmapBlender.SetTexture(0, _dResult, _dRenderOut);
+                    _lightmapBlender.SetTexture(kernelIndex, _lResult, _lRenderOut);
+                    _lightmapBlender.SetTexture(kernelIndex, _dResult, _dRenderOut);
 
-                    _lightmapBlender.Dispatch(0, (width * 2) / 8, (height * 2) / 8, 1);
+#if ENABLE_SHADOW_MASK
+                    if (fromS != null || _switcher.States[to].ShadowMasks.Length > 0)
+                    {
+                        if (fromS != null)
+                            _lightmapBlender.SetTexture(kernelIndex, _shadowMask1, fromS[i]);
+
+                        if (_switcher.States[to].ShadowMasks.Length > 0)
+                            _lightmapBlender.SetTexture(kernelIndex, _shadowMask2, _switcher.States[to].ShadowMasks[i]);
+
+                        _lightmapBlender.SetTexture(kernelIndex, _sResult, _sRenderOut);
+                    }
+#endif
+
+                    _lightmapBlender.Dispatch(kernelIndex, (width * amountOfTextureToProcess) / 8, (height * amountOfTextureToProcess) / 8, 1);
 
                     lightmaps[lightmapsLerpSlots[i]].lightmapColor = RenderTextureToTexture2D(_lRenderOut, _smoothChangeTextures[i]);
                     lightmaps[lightmapsLerpSlots[i]].lightmapDir = RenderTextureToTexture2D(_dRenderOut, _smoothChangeTextures[i + mapsPerState]);
+
+#if ENABLE_SHADOW_MASK
+                    if (fromS != null || _switcher.States[to].ShadowMasks.Length > 0)
+                        lightmaps[lightmapsLerpSlots[i]].shadowMask = RenderTextureToTexture2D(_sRenderOut, _smoothChangeTextures[i + mapsPerState * 2]);
+#endif
                 }
 
                 _switcher.SetLightmaps(lightmapsLerpSlots, lightmaps);
@@ -312,6 +409,7 @@ namespace RuntimeLightmapController
 
             _lRenderOut.Release();
             _dRenderOut.Release();
+            _sRenderOut?.Release();
             _switcher.RemoveTemporaryLightmapSlots(lightmapsLerpSlots);
             SwitchLightState(to);
 
@@ -335,8 +433,6 @@ namespace RuntimeLightmapController
 
             float t = 0;
             SphericalHarmonicsL2[] outData = new SphericalHarmonicsL2[_lightProbeIndexes.Length];
-
-
 
             int threadGroups = (int)(_lightProbeIndexes.Length / 64);
             threadGroups = threadGroups < 1 ? 1 : threadGroups;
@@ -376,8 +472,6 @@ namespace RuntimeLightmapController
 
                 _outSH.GetData(outData);
                 _switcher.SwitchCurrentBakedProbeDataSmoothly(outData, _lightProbeIndexes);
-
-
 
                 await Task.Yield();
             }
@@ -430,7 +524,6 @@ namespace RuntimeLightmapController
             _outSH = null;
         }
 #endif
-
 
 #if UNITY_EDITOR
         public void GetStaticRenderers()

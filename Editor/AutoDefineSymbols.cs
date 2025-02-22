@@ -19,35 +19,66 @@ using UnityEngine;
 //    }
 //}
 
-public class DefineSymbolSetup
+namespace RuntimeLightmapController.LightmapEditor
 {
-    private const string DEFINE_SYMBOL = "ENABLE_LIGHTMAP_LERP";
+    public class DefineSymbolSetup
+    {
+        private const string LIGHTMAP_LERP_DEFINE_SYMBOL = "ENABLE_LIGHTMAP_LERP", SHADOW_MASK_SUPPORT_DEFINE_SYMBOL = "ENABLE_SHADOW_MASK";
 
 #if !ENABLE_LIGHTMAP_LERP
-    [MenuItem("Tools/Enable Lightmap Lerp")]
+    [MenuItem("Tools/Runtime Lightmap Controller/Enable Lightmap Lerp")]
     public static void EnableLightmapLerp()
     {
         string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
 
-        if (!defines.Contains("ENABLE_LIGHTMAP_LERP"))
+        if (!defines.Contains(LIGHTMAP_LERP_DEFINE_SYMBOL))
         {
-            defines += ";ENABLE_LIGHTMAP_LERP";
+            defines += ";" + LIGHTMAP_LERP_DEFINE_SYMBOL;
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
             Debug.Log($"{DEFINE_SYMBOL} enabled!");
         }
     }
 #elif ENABLE_LIGHTMAP_LERP
-    [MenuItem("Tools/Disable Lightmap Lerp")]
-    public static void DisableLightmapLerp()
+        [MenuItem("Tools/Runtime Lightmap Controller/Disable Lightmap Lerp")]
+        public static void DisableLightmapLerp()
+        {
+            string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
+
+            if (defines.Contains(LIGHTMAP_LERP_DEFINE_SYMBOL))
+            {
+                defines = defines.Replace(LIGHTMAP_LERP_DEFINE_SYMBOL, "").Replace(";;", ";").Trim(';');
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
+                Debug.Log($"{LIGHTMAP_LERP_DEFINE_SYMBOL} disabled!");
+            }
+        }
+#endif
+
+#if !ENABLE_SHADOW_MASK
+        [MenuItem("Tools/Runtime Lightmap Controller/Enable Shadow Mask Support")]
+        public static void EnableShadowMaskSupport()
+        {
+            string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
+
+            if (!defines.Contains(SHADOW_MASK_SUPPORT_DEFINE_SYMBOL))
+            {
+                defines += ";" + SHADOW_MASK_SUPPORT_DEFINE_SYMBOL;
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
+                Debug.Log($"{SHADOW_MASK_SUPPORT_DEFINE_SYMBOL} enabled!");
+            }
+        }
+#elif ENABLE_SHADOW_MASK
+    [MenuItem("Tools/Runtime Lightmap Controller/Disable Shadow Mask Support")]
+    public static void DisableShadowMaskSupport()
     {
         string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
 
-        if (defines.Contains("ENABLE_LIGHTMAP_LERP"))
+        if (defines.Contains(SHADOW_MASK_SUPPORT_DEFINE_SYMBOL))
         {
-            defines = defines.Replace(DEFINE_SYMBOL, "").Replace(";;", ";").Trim(';');
+            defines = defines.Replace(SHADOW_MASK_SUPPORT_DEFINE_SYMBOL, "").Replace(";;", ";").Trim(';');
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
-            Debug.Log($"{DEFINE_SYMBOL} disabled!");
+            Debug.Log($"{SHADOW_MASK_SUPPORT_DEFINE_SYMBOL} disabled!");
         }
     }
 #endif
+    }
 }

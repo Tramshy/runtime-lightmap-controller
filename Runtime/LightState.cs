@@ -9,10 +9,19 @@ namespace RuntimeLightmapController
     {
         [SerializeField] private Texture2D[] _lightmapLight, _lightmapDir;
 
+#if ENABLE_SHADOW_MASK
+        [Tooltip("This array can differ between states, but if the state has shadow masks the array has to be the same size as other lightmap arrays.")]
+        [SerializeField] private Texture2D[] _shadowMask;
+#endif
+
         [SerializeField] private SphericalHarmonicsL2[] _stateProbeData;
 
         public Texture2D[] LLightmaps { get => _lightmapLight; }
         public Texture2D[] DLightmaps { get => _lightmapDir; }
+
+#if ENABLE_SHADOW_MASK
+        public Texture2D[] ShadowMasks { get => _shadowMask; }
+#endif
 
         public SphericalHarmonicsL2[] StateProbeData { get => _stateProbeData; }
 

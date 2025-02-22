@@ -5,10 +5,14 @@ Texture2D<float4> _LLightmap1;
 Texture2D<float4> _LLightmap2;
 Texture2D<float4> _DLightmap1;
 Texture2D<float4> _DLightmap2;
+Texture2D<float4> _ShadowMask1;
+Texture2D<float4> _ShadowMask2;
 
 // Param
 float2 _LightmapSize;
 float _LerpFactor;
+
+int _UseShadowMask;
 
 // State
 SamplerState LinearClamp;
@@ -16,6 +20,7 @@ SamplerState LinearClamp;
 // Out
 RWTexture2D<float4> _ResultLight;
 RWTexture2D<float4> _ResultDir;
+RWTexture2D<float4> _ResultShadowMask;
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
@@ -30,4 +35,12 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     
     _ResultLight[id.xy] = lerp(color1, color2, _LerpFactor);
     _ResultDir[id.xy] = lerp(color3, color4, _LerpFactor);
+    
+    if (_UseShadowMask > 0)
+    {
+        float4 color5 = _ShadowMask1.SampleLevel(LinearClamp, uv, 0);
+        float4 color6 = _ShadowMask2.SampleLevel(LinearClamp, uv, 0);
+        
+        _ResultShadowMask[id.xy] = lerp(color5, color6, _LerpFactor);
+    }
 }

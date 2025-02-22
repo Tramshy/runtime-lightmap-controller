@@ -11,7 +11,7 @@ StructuredBuffer<float3> _SH2;
 // Params
 float _LerpFactor;
 
-// Out    
+// Out
 RWStructuredBuffer<float3> _Result;
 
 [numthreads(64,1,1)]
