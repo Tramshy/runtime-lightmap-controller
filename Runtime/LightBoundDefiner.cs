@@ -289,15 +289,8 @@ namespace RuntimeLightmapController
             if (_switcher.States[to].ShadowMasks.Length == 0)
                 _lightmapBlender.SetTexture(kernelIndex, _shadowMask2, _switcher.ShadowMaskReplacement);
 
-            if (fromS == null)
-                Debug.Log("No shadow mask on from yo");
-
-            if (_switcher.States[to].ShadowMasks.Length == 0)
-                Debug.Log("No shadow mask on to yo");
-
             if (fromS == null && _switcher.States[to].ShadowMasks.Length == 0)
             {
-                Debug.Log("No shadow masks yo");
                 _lightmapBlender.SetInt(_shouldUseShadowMask, 0);
                 _lightmapBlender.SetTexture(kernelIndex, _sResult, _sRenderOut);
 
@@ -305,9 +298,6 @@ namespace RuntimeLightmapController
             }
             else
             {
-                if (fromS != null && _switcher.States[to].ShadowMasks.Length > 0)
-                    Debug.Log("Both got shadow masks yo");
-
                 _lightmapBlender.SetInt(_shouldUseShadowMask, 1);
             }
 
