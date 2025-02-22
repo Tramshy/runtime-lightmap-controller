@@ -14,6 +14,8 @@ namespace RuntimeLightmapController
 
         private LightmapData[] _currentLightmaps;
 
+        [SerializeField] private LightBoundDefiner[] _sceneBounds;
+
         public SphericalHarmonicsL2[] CurrentBakedProbes { get; private set; }
 
         public Vector2Int LightmapSize { get; private set; }
@@ -141,7 +143,39 @@ namespace RuntimeLightmapController
             LightmapSettings.lightProbes.bakedProbes = CurrentBakedProbes;
         }
 
+        public void SwitchAllSceneBounds(int stateToSwitch)
+        {
+            for (int i = 0; i < _sceneBounds.Length; i++)
+            {
+                _sceneBounds[i].SwitchLightState(stateToSwitch);
+            }
+        }
+
+        public void SwitchAllSceneBoundsToNextState()
+        {
+            for (int i = 0; i < _sceneBounds.Length; i++)
+            {
+                _sceneBounds[i].SwitchLightStateToNext();
+            }
+        }
+
 #if ENABLE_LIGHTMAP_LERP
+        public void SwitchAllSceneBoundsSmooth(int stateToSwitch, int framesBetweenChecks, float timeToBlend)
+        {
+            for (int i = 0; i < _sceneBounds.Length; i++)
+            {
+                _sceneBounds[i].SwitchLightStateSmooth(stateToSwitch, framesBetweenChecks, timeToBlend);
+            }
+        }
+
+        public void SwitchAllSceneBoundsSmoothToNext(int framesBetweenChecks, float timeToBlend)
+        {
+            for (int i = 0; i < _sceneBounds.Length; i++)
+            {
+                _sceneBounds[i].SwitchLightStateSmoothToNext(framesBetweenChecks, timeToBlend);
+            }
+        }
+
         public void SwitchCurrentBakedProbeDataSmoothly(SphericalHarmonicsL2[] newData, int[] indexes)
         {
             for (int i = 0; i < indexes.Length; i++)
