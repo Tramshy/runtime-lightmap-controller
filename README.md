@@ -26,10 +26,14 @@ A system that allows for switching lightmaps at runtime. Allows for switching fo
 * `Get Static Renderers With Colliders` vs. `Get Static Renderers Without Colliders`: The main difference is that if you use the latter option it will get renderers based on the transform of the object. This means that in order for a renderer to be found its center needs to be within bounds.
 
 ## Performance Notes
-This system is pretty well optimized, but using the smooth transition methods can be quite costly. (especially if you run this for multiple `LightBoundDefiner` at once) The smooth transition also requires quite a bit of preparation when the game is first started. If performance is a concern: consider disabling smooth transitions all together. This can be done under the `Tools` menu, found at the top of the screen.
+This system is pretty well optimized, but using the smooth transition methods can be quite costly. (especially if you run this for multiple `LightBoundDefiner` at once) The smooth transition also requires quite a bit of preparation when the game is first started. If performance is a concern: consider disabling smooth transitions all together. This can be done under the `Tools/Runtime Lightmap Controller` menu, found at the top of the screen.
 
 ## License
 This package is licensed under the MIT License. For more information read: `LICENSE`.
 
 ## Additional Notes
+You also need to manually enable shadow mask support under the `Tools/Runtime Lightmap Controller` menu.
+
+Since switching lightmap and light probe data involves a lot of switching and editing arrays, there are times where the system can break if it is constantly in use.
+
 The use of [UPM Git Extension](https://github.com/mob-sakai/UpmGitExtension) is highly recommended, for easy updating of this package.
