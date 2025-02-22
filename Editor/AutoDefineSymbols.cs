@@ -35,7 +35,7 @@ namespace RuntimeLightmapController.LightmapEditor
         {
             defines += ";" + LIGHTMAP_LERP_DEFINE_SYMBOL;
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
-            Debug.Log($"{DEFINE_SYMBOL} enabled!");
+            Debug.Log($"{LIGHTMAP_LERP_DEFINE_SYMBOL} enabled!");
         }
     }
 #elif ENABLE_LIGHTMAP_LERP
