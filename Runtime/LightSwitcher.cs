@@ -71,7 +71,7 @@ namespace RuntimeLightmapController
 
             _currentLightmaps = LightmapSettings.lightmaps;
 
-#if ENABLE_SHADOW_MASK
+#if ENABLE_SHADOW_MASK && ENABLE_LIGHTMAP_LERP
             ShadowMaskReplacement = new Texture2D(LightmapSize.x, LightmapSize.y, TextureFormat.RGBAHalf, false);
             var pixels = new Color32[LightmapSize.x * LightmapSize.y];
 
