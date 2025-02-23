@@ -63,6 +63,33 @@ namespace RuntimeLightmapController
             }
 
             LightmapSize = new Vector2Int(_data[0].LLightmaps[0].width, _data[0].LLightmaps[0].height);
+
+            List<int> indexes = new List<int>(), toRemove = new List<int>();
+            int index = 0;
+
+            for (int i = 0; i < _sceneBounds.Length; i++)
+            {
+                for (int j = 0; j < _sceneBounds[i].lightProbeIndexes.Length; j++)
+                {
+                    index = _sceneBounds[i].lightProbeIndexes[j];
+
+                    if (indexes.Contains(index))
+                        toRemove.Add(index);
+                    else
+                    {
+                        indexes.Add(index);
+                    }
+                }
+
+                var boundsIndexes = _sceneBounds[i].lightProbeIndexes.ToList();
+
+                for (int j = 0; j < toRemove.Count; j++)
+                {
+                    boundsIndexes.Remove(toRemove[j]);
+                }
+
+                _sceneBounds[i].lightProbeIndexes = boundsIndexes.ToArray();
+            }
         }
 
         private void Start()

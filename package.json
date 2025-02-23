@@ -1,6 +1,6 @@
 {
   "name": "com.tramshy.runtime-lightmap-controller",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "displayName": "Runtime Lightmap Controller",
   "description": "A system that allows for switching lightmaps at runtime. Allows for switching for individual renderers, switching for light probes and smooth switching by lerping",
   "unity": "2022.3",

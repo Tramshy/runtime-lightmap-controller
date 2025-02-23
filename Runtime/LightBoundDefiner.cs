@@ -14,7 +14,7 @@ namespace RuntimeLightmapController
     {
         public int CurrentLightState { get; private set; } = 0;
 
-        [SerializeField] private int[] _lightProbeIndexes;
+        [SerializeField] internal int[] lightProbeIndexes;
 
         [SerializeField] private bool _shouldWarnAboutStaticNonuseOfLightmap = true, _shouldDisplayWireFrame = true;
 #if ENABLE_LIGHTMAP_LERP
@@ -69,13 +69,13 @@ namespace RuntimeLightmapController
 
             _lightmapBlender = Resources.Load<ComputeShader>(@"LightmapSmoothing");
 
-            if (_lightProbeIndexes.Length == 0)
+            if (lightProbeIndexes.Length == 0)
                 return;
 
             _shBlender = Resources.Load<ComputeShader>(@"SHSmoothing");
 
             int shCoeffCount = 9;
-            int totalSize = _lightProbeIndexes.Length * shCoeffCount;
+            int totalSize = lightProbeIndexes.Length * shCoeffCount;
             int stride = sizeof(float) * 3;
 
             _sh1 = new ComputeBuffer(totalSize, stride);
@@ -134,7 +134,7 @@ namespace RuntimeLightmapController
 #endif
             }
 
-            if (_lightProbeIndexes.Length == 0)
+            if (lightProbeIndexes.Length == 0)
                 return;
 
             _firstSH = _switcher.SH1;
@@ -142,7 +142,7 @@ namespace RuntimeLightmapController
             _shResult = _switcher.SHResult;
             _shLerpFactor = _switcher.SHLerpFactor;
 
-            _probes = new SphericalHarmonicsL2[_lightProbeIndexes.Length];
+            _probes = new SphericalHarmonicsL2[lightProbeIndexes.Length];
 
             SetCurrentProbes();
 #endif
@@ -153,7 +153,7 @@ namespace RuntimeLightmapController
         {
             for (int i = 0; i < _probes.Length; i++)
             {
-                _probes[i] = _switcher.CurrentBakedProbes[_lightProbeIndexes[i]];
+                _probes[i] = _switcher.CurrentBakedProbes[lightProbeIndexes[i]];
             }
         }
 #endif
@@ -183,7 +183,7 @@ namespace RuntimeLightmapController
                 _staticRenderers[i].ThisRenderer.lightmapIndex = (lightStateToSwitch * _switcher.LightmapPerState) + _staticRenderers[i].StartIndex;
             }
 
-            _switcher.SwitchCurrentBakedProbeData(lightStateToSwitch, _lightProbeIndexes);
+            _switcher.SwitchCurrentBakedProbeData(lightStateToSwitch, lightProbeIndexes);
         }
 
 #if ENABLE_LIGHTMAP_LERP
@@ -235,7 +235,7 @@ namespace RuntimeLightmapController
 
             CurrentLightState = lightStateToSwitch;
 
-            if (_lightProbeIndexes.Length != 0)
+            if (lightProbeIndexes.Length != 0)
                 BlendSH(_probes, lightStateToSwitch, timeToBlend, framesBetweenChecks);
         }
 
@@ -411,20 +411,20 @@ namespace RuntimeLightmapController
             // Ensure CancellationTokenSource is reset.
             await Task.Yield();
 
-            SphericalHarmonicsL2[] specificStateProbes = new SphericalHarmonicsL2[_lightProbeIndexes.Length];
+            SphericalHarmonicsL2[] specificStateProbes = new SphericalHarmonicsL2[lightProbeIndexes.Length];
 
             for (int i = 0; i < specificStateProbes.Length; i++)
             {
-                specificStateProbes[i] = _switcher.States[to].StateProbeData[_lightProbeIndexes[i]];
+                specificStateProbes[i] = _switcher.States[to].StateProbeData[lightProbeIndexes[i]];
             }
 
             _sh1.SetData(from);
             _sh2.SetData(specificStateProbes);
 
             float t = 0;
-            SphericalHarmonicsL2[] outData = new SphericalHarmonicsL2[_lightProbeIndexes.Length];
+            SphericalHarmonicsL2[] outData = new SphericalHarmonicsL2[lightProbeIndexes.Length];
 
-            int threadGroups = (int)(_lightProbeIndexes.Length / 64);
+            int threadGroups = (int)(lightProbeIndexes.Length / 64);
             threadGroups = threadGroups < 1 ? 1 : threadGroups;
 
             while (t < timeToBlend && !_cancelSource.IsCancellationRequested)
@@ -461,12 +461,12 @@ namespace RuntimeLightmapController
                 _shBlender.Dispatch(0, threadGroups, 1, 1);
 
                 _outSH.GetData(outData);
-                _switcher.SwitchCurrentBakedProbeDataSmoothly(outData, _lightProbeIndexes);
+                _switcher.SwitchCurrentBakedProbeDataSmoothly(outData, lightProbeIndexes);
 
                 await Task.Yield();
             }
 
-            _switcher.SwitchCurrentBakedProbeData(to, _lightProbeIndexes);
+            _switcher.SwitchCurrentBakedProbeData(to, lightProbeIndexes);
             SetCurrentProbes();
         }
 #endif
@@ -502,7 +502,7 @@ namespace RuntimeLightmapController
         {
             _cancelSource?.Cancel();
 
-            if (_lightProbeIndexes.Length == 0)
+            if (lightProbeIndexes.Length == 0)
                 return;
 
             _sh1.Release();
@@ -519,12 +519,14 @@ namespace RuntimeLightmapController
         public void GetStaticRenderers()
         {
             List<RendererData> renderers = new List<RendererData>();
+            List<Collider> addedCols = new List<Collider>();
 
             foreach (var col in Physics.OverlapBox(transform.position, transform.lossyScale / 2))
             {
-                if (!col.gameObject.isStatic)
+                if (!col.gameObject.isStatic || addedCols.Contains(col))
                     continue;
 
+                addedCols.Add(col);
                 var temp = col.GetComponentInChildren<Renderer>();
 
                 if (temp != null)
@@ -545,7 +547,7 @@ namespace RuntimeLightmapController
 
             foreach (var g in GameObject.FindObjectsOfType<GameObject>())
             {
-                if (!g.isStatic || !bounds.Contains(g.transform.position))
+                if (!g.isStatic || (!bounds.Contains(g.transform.position) && !bounds.Intersects(new Bounds(g.transform.position, g.transform.lossyScale))))
                     continue;
 
                 var temp = g.GetComponentInChildren<Renderer>();
@@ -572,7 +574,7 @@ namespace RuntimeLightmapController
                     indexes.Add(Array.IndexOf(LightmapSettings.lightProbes.positions, pos));
             }
 
-            _lightProbeIndexes = indexes.ToArray();
+            lightProbeIndexes = indexes.ToArray();
 
             Undo.RecordObject(this, "Set Probe Indexes");
             EditorUtility.SetDirty(this);
