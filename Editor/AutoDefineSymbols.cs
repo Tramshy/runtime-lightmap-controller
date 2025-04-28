@@ -25,6 +25,7 @@ namespace RuntimeLightmapController.LightmapEditor
     {
         private const string LIGHTMAP_LERP_DEFINE_SYMBOL = "ENABLE_LIGHTMAP_LERP", SHADOW_MASK_SUPPORT_DEFINE_SYMBOL = "ENABLE_SHADOW_MASK";
 
+        // Switch between menu item button depending on what DefineSymbols are present.
 #if !ENABLE_LIGHTMAP_LERP
     [MenuItem("Tools/Runtime Lightmap Controller/Enable Lightmap Lerp")]
     public static void EnableLightmapLerp()
@@ -33,6 +34,7 @@ namespace RuntimeLightmapController.LightmapEditor
 
         if (!defines.Contains(LIGHTMAP_LERP_DEFINE_SYMBOL))
         {
+            // Add define symbol
             defines += ";" + LIGHTMAP_LERP_DEFINE_SYMBOL;
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
             Debug.Log($"{LIGHTMAP_LERP_DEFINE_SYMBOL} enabled!");
@@ -46,6 +48,7 @@ namespace RuntimeLightmapController.LightmapEditor
 
             if (defines.Contains(LIGHTMAP_LERP_DEFINE_SYMBOL))
             {
+                // Find DefineSymbol and remove.
                 defines = defines.Replace(LIGHTMAP_LERP_DEFINE_SYMBOL, "").Replace(";;", ";").Trim(';');
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
                 Debug.Log($"{LIGHTMAP_LERP_DEFINE_SYMBOL} disabled!");

@@ -8,12 +8,11 @@ using UnityEngine.Rendering;
 
 namespace RuntimeLightmapController
 {
-    // Was gonna comment this, but I'm tired.
-    // Good luck.
     public class LightBoundDefiner : MonoBehaviour
     {
         public int CurrentLightState { get; private set; } = 0;
 
+        // Indexes for light probes saved in LightSwitcher
         [SerializeField] internal int[] lightProbeIndexes;
 
         [SerializeField] private bool _shouldWarnAboutStaticNonuseOfLightmap = true, _shouldDisplayWireFrame = true;
@@ -47,6 +46,7 @@ namespace RuntimeLightmapController
         private int _firstSH, _secondSH, _shResult, _shLerpFactor;
 #endif
 
+        // Stores a renderer and it's starting index for lightmaps.
         [Serializable]
         private struct RendererData
         {
@@ -175,7 +175,7 @@ namespace RuntimeLightmapController
                 {
                     if (_shouldWarnAboutStaticNonuseOfLightmap)
                         Debug.LogWarning(_staticRenderers[i].ThisRenderer.gameObject.name + " is static, but does not make use of baked light textures.\n" +
-                                            "If this is intended, you can disable this warning by setting the Should Warn About Static Nonuse Of Lightmap bool to false");
+                                         "If this is intended, you can disable this warning by setting the Should Warn About Static Nonuse Of Lightmap bool to false");
 
                     continue;
                 }

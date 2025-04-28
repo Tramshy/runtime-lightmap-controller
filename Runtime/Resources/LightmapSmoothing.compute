@@ -1,10 +1,13 @@
 #pragma kernel CSMain
 
 // In
+// Light
 Texture2D<float4> _LLightmap1;
 Texture2D<float4> _LLightmap2;
+// Direction
 Texture2D<float4> _DLightmap1;
 Texture2D<float4> _DLightmap2;
+// Shadow
 Texture2D<float4> _ShadowMask1;
 Texture2D<float4> _ShadowMask2;
 

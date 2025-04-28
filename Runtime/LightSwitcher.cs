@@ -32,6 +32,7 @@ namespace RuntimeLightmapController
 
         #region Shader properties
 
+        // ID's for properties found in the compute shaders.
         public int LightmapLight1 { get; } = Shader.PropertyToID("_LLightmap1");
         public int LightmapLight2 { get; } = Shader.PropertyToID("_LLightmap2");
         public int LightmapDir1 { get; } = Shader.PropertyToID("_DLightmap1");
@@ -55,6 +56,7 @@ namespace RuntimeLightmapController
 
         private void Awake()
         {
+            // Singleton
             if (Instance == null)
                 Instance = this;
             else
@@ -67,6 +69,7 @@ namespace RuntimeLightmapController
             List<int> indexes = new List<int>(), toRemove = new List<int>();
             int index = 0;
 
+            // Make sure that light probes can only be owned by one light bound.
             for (int i = 0; i < _sceneBounds.Length; i++)
             {
                 for (int j = 0; j < _sceneBounds[i].lightProbeIndexes.Length; j++)
@@ -99,6 +102,7 @@ namespace RuntimeLightmapController
             _currentLightmaps = LightmapSettings.lightmaps;
 
 #if ENABLE_SHADOW_MASK && ENABLE_LIGHTMAP_LERP
+            // Set up extra textures needed for shadow mask lerping.
             ShadowMaskReplacement = new Texture2D(LightmapSize.x, LightmapSize.y, TextureFormat.RGBAHalf, false);
             var pixels = new Color32[LightmapSize.x * LightmapSize.y];
 
@@ -203,6 +207,9 @@ namespace RuntimeLightmapController
             }
         }
 
+        /// <summary>
+        /// Lerps light probe data.
+        /// </summary>
         public void SwitchCurrentBakedProbeDataSmoothly(SphericalHarmonicsL2[] newData, int[] indexes)
         {
             for (int i = 0; i < indexes.Length; i++)
@@ -220,6 +227,11 @@ namespace RuntimeLightmapController
             LightmapSettings.lightProbes.bakedProbes = CurrentBakedProbes;
         }
 
+        /// <summary>
+        /// Adds new light maps slots that can be used to store the currently lerping light maps.
+        /// </summary>
+        /// <param name="stateForInitialCopy">The light state to copy when adding new light map slots</param>
+        /// <returns></returns>
         public int[] AddNewTemporaryLightmapSlots(int stateForInitialCopy)
         {
             if (stateForInitialCopy < 0 || stateForInitialCopy > LightStates)
