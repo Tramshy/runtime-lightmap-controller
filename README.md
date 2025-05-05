@@ -35,5 +35,3 @@ This package is licensed under the MIT License. For more information read: `LICE
 You also need to manually enable shadow mask support under the `Tools/Runtime Lightmap Controller` menu.
 
 Since switching lightmap and light probe data involves a lot of switching and editing arrays, there are times where the system can break if it is constantly in use.
-
-The use of [UPM Git Extension](https://github.com/mob-sakai/UpmGitExtension) is highly recommended, for easy updating of this package.
