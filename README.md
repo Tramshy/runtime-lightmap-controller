@@ -9,10 +9,10 @@ A system that allows for switching lightmaps at runtime. Allows for switching fo
 
 ## Installation
 This repository is installed as a package for Unity.
-1. `Open Window` > `Package Manager`
-2. Click `+`
-3. Select Add Package from git URL
-4. Paste `https://github.com/Tramshy/runtime-lightmap-controller.git`
+1. `Open Window` > `Package Manager`.
+2. Click `+`.
+3. Select Add Package from git URL.
+4. Paste `https://github.com/Tramshy/runtime-lightmap-controller.git`.
 5. Click Add.
 
 NOTE: To do this you need Git installed on your computer.
