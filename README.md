@@ -31,9 +31,26 @@ NOTE: To do this you need Git installed on your computer.
 10. Create as many as needed for the scene (one per room for example) and scale so it covers all static game objects and light probes. (if you have any)
 11. Press one of the `Get Static Renderers` buttons and then press the `Get Probes Within Bounds` button.
 
+### Reflection Probes
+1. Enable reflection probe support under the `Tools/Runtime Lightmap Controller` menu, if it is not already enabled.
+2. Make sure all probes are set to `Bake`.
+3. Bake all probe data for a specific state, before copying the textures and adding to the `Light State` array.
+   - Make sure the indexes in the name match the cubemaps index in the array.
+   - If there is a gap in the indexes of the textures, simply recreate the gap in the array.
+4. After baking all reflection probes, press the `Get Reflection Probes Within Bounds` button for all `Bound Definers`.
+   - This can be done at any time after having baked all relevant reflection probes.
+
+#### Additional Notes
+- Make sure to not ever rename the original cubemaps. The copied versions can have their names changed or be modified in whatever ways are needed.
+- It is also recommended to not delete any of the original cubemaps while working on a scene, even if they end up unused. After a scene is completely finished, and you decide to not make any changes to the scene, you may delete any or all original baked cubemaps.
+    - If you do remove some originals before being finished with a scene, you will most likely need to set all the data in the `Bound Definers` again.
+
 #### Light Bound Definer Fields
 * `Should Warn About Static Nonuse Of Lightmap`: Will warn if a static game object is found within bounds and doesn't make use of lightmap when trying to switch lightmap data for bounds. Disable this bool if this was intentional.
 * `Will Use Smooth Light Transition`: If this is disabled, you will save a small amount of CPU and memory usage when starting the game. This will also prevent you from calling the smooth transition methods.
+
+## Usage
+To switch light states during runtime, call any of the `SwitchLightState` methods within the `LightBoundDefiner`, or call any of the `SwitchAllSceneBounds` methods in the `LightSwitcher` to switch all bounds in the scene.
 
 ## Performance Notes
 This system is pretty well optimized, but using the smooth transition methods can be quite costly. (especially if you run this for multiple `LightBoundDefiner` at once) The smooth transition also requires quite a bit of preparation when the game is first started. If performance is a concern: consider disabling smooth transitions all together. This can be done under the `Tools/Runtime Lightmap Controller` menu, found at the top of the screen.
