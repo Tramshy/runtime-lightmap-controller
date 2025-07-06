@@ -16,6 +16,12 @@ namespace RuntimeLightmapController
         [SerializeField] private Texture2D[] _shadowMask;
 #endif
 
+#if ENABLE_REFLECTION_PROBE
+        [Tooltip("Make sure the index of this array matches the index in the name of the cubemap.\n" +
+                 "If there is a gap in the indexes of the textures, simply recreate the gap in this array as well.")]
+        [SerializeField] private Cubemap[] _reflectionProbeMaps;
+#endif
+
         // Light probes for a state.
         [SerializeField] private SphericalHarmonicsL2[] _stateProbeData;
 
@@ -27,6 +33,10 @@ namespace RuntimeLightmapController
 #endif
 
         public SphericalHarmonicsL2[] StateProbeData { get => _stateProbeData; }
+
+#if ENABLE_REFLECTION_PROBE
+        public Cubemap[] StateReflectionProbeData { get => _reflectionProbeMaps; }
+#endif
 
 #if UNITY_EDITOR
         public void StoreCurrentProbeData()

@@ -1,19 +1,43 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Windows;
 
 namespace RuntimeLightmapController
 {
+    // Check if using ref probes
+    [Serializable]
+    public struct ReflectionProbeSceneData
+    {
+        public ReflectionProbeSceneData(ReflectionProbe probe)
+        {
+            Probe = probe;
+            var textureIndex = new string(probe.bakedTexture.name.Where(char.IsDigit).ToArray());
+
+            if (!int.TryParse(textureIndex, out TextureIndex))
+                throw new FormatException($"No valid integer in '{probe.bakedTexture.name}'");
+        }
+
+        public ReflectionProbe Probe;
+        public int TextureIndex;
+    }
+
     public class LightBoundDefiner : MonoBehaviour
     {
         public int CurrentLightState { get; private set; } = 0;
 
         // Indexes for light probes saved in LightSwitcher
         [SerializeField] internal int[] lightProbeIndexes;
+
+#if ENABLE_REFLECTION_PROBE
+        [SerializeField] private ReflectionProbeSceneData[] _boundReflectionProbes;
+        public ReflectionProbeSceneData[] BoundReflectionProbes { get => _boundReflectionProbes; }
+#endif
 
         [SerializeField] private bool _shouldWarnAboutStaticNonuseOfLightmap = true, _shouldDisplayWireFrame = true;
 #if ENABLE_LIGHTMAP_LERP
@@ -87,6 +111,14 @@ namespace RuntimeLightmapController
         private void Start()
         {
             _switcher = LightSwitcher.Instance;
+
+#if ENABLE_REFLECTION_PROBE
+            for (int i = 0; i < BoundReflectionProbes.Length; i++)
+            {
+                BoundReflectionProbes[i].Probe.mode = ReflectionProbeMode.Custom;
+                BoundReflectionProbes[i].Probe.customBakedTexture = _switcher.States[0].StateReflectionProbeData[BoundReflectionProbes[i].TextureIndex];
+            }
+#endif
 
 #if ENABLE_LIGHTMAP_LERP
             if (!_willUseSmoothLightTransition)
@@ -184,6 +216,13 @@ namespace RuntimeLightmapController
             }
 
             _switcher.SwitchCurrentBakedProbeData(lightStateToSwitch, lightProbeIndexes);
+
+#if ENABLE_REFLECTION_PROBE
+            for (int i = 0; i < BoundReflectionProbes.Length; i++)
+            {
+                BoundReflectionProbes[i].Probe.customBakedTexture = _switcher.States[lightStateToSwitch].StateReflectionProbeData[BoundReflectionProbes[i].TextureIndex];
+            }
+#endif
         }
 
 #if ENABLE_LIGHTMAP_LERP
@@ -579,6 +618,59 @@ namespace RuntimeLightmapController
             Undo.RecordObject(this, "Set Probe Indexes");
             EditorUtility.SetDirty(this);
         }
+
+#if ENABLE_REFLECTION_PROBE
+        public void GetReflectionProbesWithinBounds()
+        {
+            var bounds = new Bounds(transform.position, transform.lossyScale);
+            var boundDefiners = GameObject.FindObjectsOfType<LightBoundDefiner>().ToList();
+            boundDefiners.Remove(this);
+
+            var shouldSkip = false;
+
+            List<ReflectionProbeSceneData> newData = new List<ReflectionProbeSceneData>();
+
+            foreach (var probe in GameObject.FindObjectsOfType<ReflectionProbe>())
+            {
+                if (bounds.Contains(probe.gameObject.transform.position))
+                {
+                    foreach (var definer in boundDefiners)
+                    {
+                        if (definer.BoundReflectionProbes == null)
+                            continue;
+
+                        if (shouldSkip)
+                            break;
+
+                        for (int i = 0; i < definer.BoundReflectionProbes.Length; i++)
+                        {
+                            if (definer.BoundReflectionProbes[i].Probe == probe)
+                            {
+                                shouldSkip = true;
+
+                                break;
+                            }
+                        }
+                    }
+
+                    if (shouldSkip)
+                    {
+                        shouldSkip = false;
+
+                        continue;
+                    }
+
+                    newData.Add(new ReflectionProbeSceneData(probe));
+                }
+            }
+
+            _boundReflectionProbes = newData.ToArray();
+
+            Debug.Log("Reflection probes stored!");
+            Undo.RecordObject(this, "Get Reflection Probes");
+            EditorUtility.SetDirty(this);
+        }
+#endif
 
         private void OnDrawGizmos()
         {

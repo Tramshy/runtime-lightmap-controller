@@ -23,7 +23,8 @@ namespace RuntimeLightmapController.LightmapEditor
 {
     public class DefineSymbolSetup
     {
-        private const string LIGHTMAP_LERP_DEFINE_SYMBOL = "ENABLE_LIGHTMAP_LERP", SHADOW_MASK_SUPPORT_DEFINE_SYMBOL = "ENABLE_SHADOW_MASK";
+        private const string LIGHTMAP_LERP_DEFINE_SYMBOL = "ENABLE_LIGHTMAP_LERP", SHADOW_MASK_SUPPORT_DEFINE_SYMBOL = "ENABLE_SHADOW_MASK",
+                             REFLECTION_PROBE_SUPPORT_DEFINE_SYMBOL = "ENABLE_REFLECTION_PROBE";
 
         // Switch between menu item button depending on what DefineSymbols are present.
 #if !ENABLE_LIGHTMAP_LERP
@@ -82,6 +83,35 @@ namespace RuntimeLightmapController.LightmapEditor
             Debug.Log($"{SHADOW_MASK_SUPPORT_DEFINE_SYMBOL} disabled!");
         }
     }
+#endif
+
+#if !ENABLE_REFLECTION_PROBE
+        [MenuItem("Tools/Runtime Lightmap Controller/Enable Reflection Probe Support")]
+        public static void EnableReflectionProbeSupport()
+        {
+            string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
+
+            if (!defines.Contains(REFLECTION_PROBE_SUPPORT_DEFINE_SYMBOL))
+            {
+                defines += ";" + REFLECTION_PROBE_SUPPORT_DEFINE_SYMBOL;
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
+                Debug.Log($"{REFLECTION_PROBE_SUPPORT_DEFINE_SYMBOL} enabled!");
+            }
+        }
+#elif ENABLE_REFLECTION_PROBE
+        [MenuItem("Tools/Runtime Lightmap Controller/Disable Reflection Probe Support")]
+        public static void DisableReflectionProbeSupport()
+        {
+            string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
+
+            if (defines.Contains(REFLECTION_PROBE_SUPPORT_DEFINE_SYMBOL))
+            {
+                // Find DefineSymbol and remove.
+                defines = defines.Replace(REFLECTION_PROBE_SUPPORT_DEFINE_SYMBOL, "").Replace(";;", ";").Trim(';');
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
+                Debug.Log($"{REFLECTION_PROBE_SUPPORT_DEFINE_SYMBOL} disabled!");
+            }
+        }
 #endif
     }
 }

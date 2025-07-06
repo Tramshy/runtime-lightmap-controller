@@ -116,7 +116,7 @@ namespace RuntimeLightmapController
 #endif
         }
 
-        public void SetupLightmaps()
+        private void SetupLightmaps()
         {
             // Each scene should have a consistent amount of lightmaps,
             // this means that if the first element of the light data has 2 light lightmaps then all different light states should always have the same amount of light lightmaps.
@@ -154,7 +154,7 @@ namespace RuntimeLightmapController
             LightmapSettings.lightmaps = lightmaps.ToArray();
         }
 
-        public void SwitchCurrentBakedProbeData(int lightStateIndex, int[] indexes)
+        internal void SwitchCurrentBakedProbeData(int lightStateIndex, int[] indexes)
         {
             SphericalHarmonicsL2[] data = _data[lightStateIndex].StateProbeData;
 
@@ -210,7 +210,7 @@ namespace RuntimeLightmapController
         /// <summary>
         /// Lerps light probe data.
         /// </summary>
-        public void SwitchCurrentBakedProbeDataSmoothly(SphericalHarmonicsL2[] newData, int[] indexes)
+        internal void SwitchCurrentBakedProbeDataSmoothly(SphericalHarmonicsL2[] newData, int[] indexes)
         {
             for (int i = 0; i < indexes.Length; i++)
             {
@@ -232,7 +232,7 @@ namespace RuntimeLightmapController
         /// </summary>
         /// <param name="stateForInitialCopy">The light state to copy when adding new light map slots</param>
         /// <returns></returns>
-        public int[] AddNewTemporaryLightmapSlots(int stateForInitialCopy)
+        internal int[] AddNewTemporaryLightmapSlots(int stateForInitialCopy)
         {
             if (stateForInitialCopy < 0 || stateForInitialCopy > LightStates)
                 throw new System.Exception("State given for copy to temporary lightmap slot is not valid.");
@@ -256,7 +256,7 @@ namespace RuntimeLightmapController
             return Enumerable.Range(from, to - from).ToArray();
         }
 
-        public void RemoveTemporaryLightmapSlots(int[] toRemove)
+        internal void RemoveTemporaryLightmapSlots(int[] toRemove)
         {
             foreach (int i in toRemove)
             {
@@ -279,7 +279,7 @@ namespace RuntimeLightmapController
             LightmapSettings.lightmaps = lightmaps.ToArray();
         }
 
-        public void SetLightmaps(int[] indexes, LightmapData[] data)
+        internal void SetLightmaps(int[] indexes, LightmapData[] data)
         {
             if (!LightmapSettings.lightmaps.SequenceEqual(data))
                 _currentLightmaps = LightmapSettings.lightmaps;

@@ -24,6 +24,13 @@ namespace RuntimeLightmapController.LightmapEditor
 
             if (GUILayout.Button("Get Probes Within Bounds"))
                 bounds.GetProbesWithinBounds();
+
+#if ENABLE_REFLECTION_PROBE
+            GUILayout.Space(20);
+
+            if (GUILayout.Button("Get Reflection Probes Within Bounds"))
+                bounds.GetReflectionProbesWithinBounds();
+#endif
         }
     }
 }
